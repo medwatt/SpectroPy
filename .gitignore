@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pdf
+*.log
+*.scs
+!examples/design_files/**/*.scs
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Editable install
+*.pth
+
+# Virtual environments
+.venv/
+venv/
+env/
+*.raw/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Tools
+pyrightconfig.json
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Tests
+untracked/
+examples/spectropy_results/
+examples/config_local.py
+
+# OS
+.DS_Store

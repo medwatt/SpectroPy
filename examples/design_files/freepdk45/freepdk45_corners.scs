@@ -1,0 +1,37 @@
+simulator lang=spectre
+
+// Educational FreePDK/PTM-style MOS corner library.
+//
+// The public FreePDK example files in this repository provide one nominal
+// NMOS/PMOS model and no foundry process-corner sections. This file creates a
+// small distributable corner library for demonstrating SpectroPy's corner
+// syntax. It is not a foundry-characterized corner model.
+
+library freepdk45_corners
+
+section tt
+    model NMOS_VTH bsim4 type=n level=54 tnom=27 toxe=1.63e-9 toxp=1.0e-9 toxm=1.63e-9 toxref=1.63e-9 dtox=6.3e-10 lint=3.75e-9 vth0=0.6078 k1=0.4 u0=0.049 vsat=170000 ndep=3.24e18 xj=1.98e-8 nfactor=1.6 eta0=0.008 voff=-0.13 rdsw=155
+    model PMOS_VTH bsim4 type=p level=54 tnom=27 toxe=1.60e-9 toxp=1.0e-9 toxm=1.60e-9 toxref=1.60e-9 dtox=6.0e-10 lint=3.75e-9 vth0=-0.5044 k1=0.4 u0=0.021 vsat=80000 ndep=2.44e18 xj=1.40e-8 nfactor=1.8 eta0=0.0125 voff=-0.126 rdsw=250
+endsection tt
+
+section ss
+    model NMOS_VTH bsim4 type=n level=54 tnom=27 toxe=1.68e-9 toxp=1.0e-9 toxm=1.68e-9 toxref=1.63e-9 dtox=6.3e-10 lint=4.50e-9 vth0=0.6578 k1=0.4 u0=0.041 vsat=140000 ndep=3.24e18 xj=1.98e-8 nfactor=1.7 eta0=0.006 voff=-0.12 rdsw=190
+    model PMOS_VTH bsim4 type=p level=54 tnom=27 toxe=1.65e-9 toxp=1.0e-9 toxm=1.65e-9 toxref=1.60e-9 dtox=6.0e-10 lint=4.50e-9 vth0=-0.5544 k1=0.4 u0=0.017 vsat=65000 ndep=2.44e18 xj=1.40e-8 nfactor=1.9 eta0=0.0100 voff=-0.116 rdsw=310
+endsection ss
+
+section ff
+    model NMOS_VTH bsim4 type=n level=54 tnom=27 toxe=1.58e-9 toxp=1.0e-9 toxm=1.58e-9 toxref=1.63e-9 dtox=6.3e-10 lint=3.00e-9 vth0=0.5578 k1=0.4 u0=0.058 vsat=205000 ndep=3.24e18 xj=1.98e-8 nfactor=1.5 eta0=0.010 voff=-0.14 rdsw=120
+    model PMOS_VTH bsim4 type=p level=54 tnom=27 toxe=1.55e-9 toxp=1.0e-9 toxm=1.55e-9 toxref=1.60e-9 dtox=6.0e-10 lint=3.00e-9 vth0=-0.4544 k1=0.4 u0=0.026 vsat=98000 ndep=2.44e18 xj=1.40e-8 nfactor=1.7 eta0=0.0150 voff=-0.136 rdsw=190
+endsection ff
+
+section sf
+    model NMOS_VTH bsim4 type=n level=54 tnom=27 toxe=1.68e-9 toxp=1.0e-9 toxm=1.68e-9 toxref=1.63e-9 dtox=6.3e-10 lint=4.50e-9 vth0=0.6578 k1=0.4 u0=0.041 vsat=140000 ndep=3.24e18 xj=1.98e-8 nfactor=1.7 eta0=0.006 voff=-0.12 rdsw=190
+    model PMOS_VTH bsim4 type=p level=54 tnom=27 toxe=1.55e-9 toxp=1.0e-9 toxm=1.55e-9 toxref=1.60e-9 dtox=6.0e-10 lint=3.00e-9 vth0=-0.4544 k1=0.4 u0=0.026 vsat=98000 ndep=2.44e18 xj=1.40e-8 nfactor=1.7 eta0=0.0150 voff=-0.136 rdsw=190
+endsection sf
+
+section fs
+    model NMOS_VTH bsim4 type=n level=54 tnom=27 toxe=1.58e-9 toxp=1.0e-9 toxm=1.58e-9 toxref=1.63e-9 dtox=6.3e-10 lint=3.00e-9 vth0=0.5578 k1=0.4 u0=0.058 vsat=205000 ndep=3.24e18 xj=1.98e-8 nfactor=1.5 eta0=0.010 voff=-0.14 rdsw=120
+    model PMOS_VTH bsim4 type=p level=54 tnom=27 toxe=1.65e-9 toxp=1.0e-9 toxm=1.65e-9 toxref=1.60e-9 dtox=6.0e-10 lint=4.50e-9 vth0=-0.5544 k1=0.4 u0=0.017 vsat=65000 ndep=2.44e18 xj=1.40e-8 nfactor=1.9 eta0=0.0100 voff=-0.116 rdsw=310
+endsection fs
+
+endlibrary freepdk45_corners

@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spectropy"
+version = "0.1.0"
+description = "A Python tool for building and running Spectre netlists"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "psf_utils>=1.10",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["spectropy*"]
