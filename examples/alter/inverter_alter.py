@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from spectropy import SpectreSession, Circuit, SubCircuit, simulations
+from spectropy import SpectreSession, Circuit, SubCircuit, analyses
 from examples.config import BACKEND, OUTDIR, FREEPDK45_DIR
 
 VDD = 1.0
@@ -33,16 +33,21 @@ def main() -> None:
     session = SpectreSession(backend=BACKEND)
     session.load_netlist(build_netlist().get_netlist())
 
-    # Build the run sequence: set temperature, then sweep.
-    runnables = []
-    for i, (temp, dc_name) in enumerate(TEMPS):
-        runnables.append(simulations.Alter(name=f"set_temp_{i}", param="temp", value=temp))
-        runnables.append(simulations.DC(param="vin", start=0, stop=VDD, step=0.005, name=dc_name))
+    # Each Stage owns the Alter that sets up its DC sweep: "set this
+    # temperature, then run this DC analysis under it". Every Stage produces a
+    # result, keyed by the stage name.
+    stages = [
+        analyses.Stage(
+            name=dc_name,
+            setup=[analyses.Alter(name=f"set_temp_{i}", param="temp", value=temp)],
+            inner=[analyses.DC(param="vin", start=0, stop=VDD, step=0.005, name=dc_name)],
+        )
+        for i, (temp, dc_name) in enumerate(TEMPS)
+    ]
 
-    # Run the simulations
-    result = session.run(*runnables, stem="inverter_alter", outdir=OUTDIR)
+    result = session.run(*stages, stem="inverter_alter", outdir=OUTDIR)
 
-    # result has exactly len(TEMPS) entries; Alter instances are skipped.
+    # result has exactly len(TEMPS) entries, one per Stage.
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
     colors = ["steelblue", "forestgreen", "tomato"]
@@ -50,8 +55,8 @@ def main() -> None:
     ax_vout = axes[0]
     ax_gain = axes[1]
 
-    for i, (temp, _) in enumerate(TEMPS):
-        dc = result[i]
+    for i, (temp, dc_name) in enumerate(TEMPS):
+        dc = result[dc_name][0]
         vin = dc.voltages["in"]
         vout = np.real(dc.voltages["out"])
         gain = np.gradient(vout, vin)

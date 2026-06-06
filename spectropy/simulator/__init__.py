@@ -1,10 +1,10 @@
 from .session import SpectreSession
 from .backends import NativeBackend, DockerBackend, SSHBackend
-from . import simulations
+from . import analyses
 from .results import (
+    Result,
+    RunResult,
     AnalysisResult,
-    SpectreRunResult,
-    SpectreResult,
     OpResult,
     DcResult,
     AcResult,
@@ -13,7 +13,5 @@ from .results import (
     NoiseResult,
     StbResult,
     PzResult,
-    SweepPointResult,
-    MonteCarloResult,
-    CornersResult,
+    GroupResult,
 )

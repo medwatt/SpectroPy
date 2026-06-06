@@ -1,6 +1,6 @@
 import numpy as np
 
-from spectropy import SpectreSession, Circuit, simulations
+from spectropy import SpectreSession, Circuit, analyses
 from examples.config import BACKEND, OUTDIR
 
 R = 1000
@@ -22,7 +22,7 @@ def main() -> None:
     session.load_netlist(build_netlist().get_netlist())
 
     result = session.run(
-        simulations.PZ(output_pos="out", iprobe="Vin"),
+        analyses.PZ(output_pos="out", iprobe="Vin"),
         stem="rc_pz",
         outdir=OUTDIR,
     )

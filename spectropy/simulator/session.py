@@ -8,10 +8,11 @@ import time
 from pathlib import Path
 
 from .backends import Backend, NativeBackend
-from .simulations import Runnable
-from .results import SpectreRunResult
+from .base import Runnable
+from .results import RunResult
 from .collector import collect_results
 # >>>
+
 
 class SpectreSession:
     def __init__(
@@ -30,12 +31,10 @@ class SpectreSession:
         *runnables: Runnable,
         stem: str = "spectre",
         outdir: str | Path | None = None,
-    ) -> SpectreRunResult:
+    ) -> RunResult:
         if self._netlist_lines is None:
             raise RuntimeError("No netlist has been loaded")
-        return self.run_netlist(
-            self._netlist_lines, *runnables, stem=stem, outdir=outdir
-        )
+        return self.run_netlist(self._netlist_lines, *runnables, stem=stem, outdir=outdir)
 
     def run_netlist(
         self,
@@ -43,7 +42,7 @@ class SpectreSession:
         *runnables: Runnable,
         stem: str = "spectre",
         outdir: str | Path | None = None,
-    ) -> SpectreRunResult:
+    ) -> RunResult:
         if outdir is None:
             outdir_path = Path(tempfile.mkdtemp(prefix="spectropy-"))
         else:
@@ -96,5 +95,4 @@ class SpectreSession:
                 f"stderr:\n{completed.stderr}"
             )
 
-        results = collect_results(raw_dir, runnables)
-        return SpectreRunResult(results, completed=completed)
+        return collect_results(raw_dir, runnables, completed=completed)

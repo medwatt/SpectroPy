@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-
-from .base import Statement
 # >>>
 
+# Configuration objects consumed by scopes.  These are *not* ``Runnable`` -- they
+# never reach ``SpectreSession.run()`` on their own:
+# ``Alter``/``AlterGroup`` are emitted by a ``Stage``'s ``setup``.
+# ``Statistics`` is emitted by the ``MonteCarlo`` that consumes its distributions.
 
-class Alter(Statement):
-    """Mutates a single parameter in-place for analyses that follow in the deck.
+# alter <<<
+class Alter:
+    """Mutates a single parameter in-place for the analyses a ``Stage`` runs.
 
     Targets:
       - temperature or a top-level parameter: omit dev/mod/sub
@@ -48,15 +51,19 @@ class Alter(Statement):
         parts.append(f"value={self.value}")
         return " ".join(parts)
 
+    def __str__(self) -> str:
+        return self.build_command()
+# >>>
 
-class AlterGroup(Statement):
+# altergroup <<<
+class AlterGroup:
     """Replaces a coherent set of model, instance, parameter, and option
-    definitions for analyses that follow in the deck.
+    definitions for the analyses a ``Stage`` runs.
 
     Structured arguments are rendered first in this order:
-      1. ``parameters`` dict  →  ``parameters k=v ...``
-      2. ``options`` dict     →  ``<name>_opts options k=v ...``
-      3. ``raw`` list         →  verbatim Spectre lines (escape hatch for model and instance statements)
+      1. ``parameters`` dict  ->  ``parameters k=v ...``
+      2. ``options`` dict     ->  ``<name>_opts options k=v ...``
+      3. ``raw`` list         ->  verbatim Spectre lines (escape hatch for model and instance statements)
 
     Allowed block content: parameters, options, model, and instance
     statements. Analyses, save, export, sens, and paramset are not valid
@@ -91,7 +98,11 @@ class AlterGroup(Statement):
         body = "\n    ".join(lines)
         return f"{self.name} altergroup {{\n    {body}\n}}"
 
+    def __str__(self) -> str:
+        return self.build_command()
+# >>>
 
+# vary <<<
 class Vary:
     """A ``vary`` statement for use inside a statistics process or mismatch block.
 
@@ -133,8 +144,9 @@ class Vary:
 
     def __str__(self) -> str:
         return self.build_line()
+# >>>
 
-
+# correlate <<<
 class Correlate:
     """A ``correlate`` statement for use inside a statistics block.
 
@@ -170,11 +182,12 @@ class Correlate:
 
     def __str__(self) -> str:
         return self.build_line()
+# >>>
 
-
-class Statistics(Statement):
-    """Defines random-variable distributions consumed by Monte Carlo,
-    dcmatch, and acmatch analyses.
+# statistics <<<
+class Statistics:
+    """Defines random-variable distributions consumed by a ``MonteCarlo``
+    analysis (passed as its ``statistics`` argument).
 
     ``process`` variations are sampled once per Monte Carlo iteration.
     ``mismatch`` variations are sampled per subcircuit instance.
@@ -229,3 +242,7 @@ class Statistics(Statement):
             return "statistics {}"
 
         return "statistics {\n" + "\n".join(lines) + "\n}"
+
+    def __str__(self) -> str:
+        return self.build_command()
+# >>>

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spectropy"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Python tool for building and running Spectre netlists"
 requires-python = ">=3.10"
 dependencies = [
@@ -12,6 +12,12 @@ dependencies = [
     "psf_utils>=1.10",
 ]
 
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["spectropy*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

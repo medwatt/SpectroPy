@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from spectropy import SpectreSession, Circuit, simulations
+from spectropy import SpectreSession, Circuit, analyses
 from examples.config import BACKEND, OUTDIR
 
 
@@ -20,7 +20,7 @@ def main() -> None:
     session.load_netlist(build_netlist().get_netlist())
 
     result = session.run(
-        simulations.Tran(stop="3m", step="1u"),
+        analyses.Tran(stop="3m", step="1u"),
         stem="diode_rectifier",
         outdir=OUTDIR,
     )

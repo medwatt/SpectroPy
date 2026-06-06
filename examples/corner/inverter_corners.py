@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from spectropy import Circuit, SpectreSession, SubCircuit, simulations
+from spectropy import Circuit, SpectreSession, SubCircuit, analyses
 from examples.config import BACKEND, OUTDIR, FREEPDK45_DIR
 
 VDD_NOM = 1.0
@@ -55,9 +55,9 @@ def main() -> None:
     session = SpectreSession(backend=BACKEND)
     session.load_netlist(build_netlist().get_netlist())
 
-    corners = simulations.Corners(
+    corners = analyses.Corners(
         corners=[
-            simulations.Corner(
+            analyses.Corner(
                 section=section,
                 file=MODEL_FILE,
                 temp=temp,
@@ -66,7 +66,7 @@ def main() -> None:
             )
             for label, section, vdd, temp in PVT_CORNERS
         ],
-        inner=[simulations.DC(param="vin", start=0, stop=VDD_MAX, step=0.005)],
+        inner=[analyses.DC(param="vin", start=0, stop=VDD_MAX, step=0.005)],
         name="pvt",
     )
 

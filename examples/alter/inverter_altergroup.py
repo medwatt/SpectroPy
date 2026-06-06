@@ -1,15 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from spectropy import SpectreSession, Circuit, SubCircuit, simulations
+from spectropy import SpectreSession, Circuit, SubCircuit, analyses
 from examples.config import BACKEND, OUTDIR, FREEPDK45_DIR
 
 VDD = 1.0
 
 CORNERS = [
-    ("nominal",   "500n", "1u",    27,  "forestgreen"),
-    ("fast_hot",  "900n", "1800n", 85,  "tomato"),
-    ("slow_cold", "250n", "500n",  -40, "steelblue"),
+    ("nominal", "500n", "1u", 27, "forestgreen"),
+    ("fast_hot", "900n", "1800n", 85, "tomato"),
+    ("slow_cold", "250n", "500n", -40, "steelblue"),
 ]
 
 
@@ -38,26 +38,30 @@ def main() -> None:
     session = SpectreSession(backend=BACKEND)
     session.load_netlist(build_netlist().get_netlist())
 
-    runnables = []
-    for name, w_n, w_p, temp, _ in CORNERS:
-        runnables.append(
-            simulations.AlterGroup(
-                name=f"corner_{name}",
-                parameters={"w_n": w_n, "w_p": w_p},
-                options={"temp": temp},
-            )
+    # Each Stage applies an AlterGroup (a coherent set of parameter/option
+    # overrides) and runs its DC sweep under it. One Stage -> one result.
+    stages = [
+        analyses.Stage(
+            name=name,
+            setup=[
+                analyses.AlterGroup(
+                    name=f"corner_{name}",
+                    parameters={"w_n": w_n, "w_p": w_p},
+                    options={"temp": temp},
+                )
+            ],
+            inner=[analyses.DC(param="vin", start=0, stop=VDD, step=0.005, name=f"dc_{name}")],
         )
-        runnables.append(
-            simulations.DC(param="vin", start=0, stop=VDD, step=0.005, name=f"dc_{name}")
-        )
+        for name, w_n, w_p, temp, _ in CORNERS
+    ]
 
-    result = session.run(*runnables, stem="inverter_corners", outdir=OUTDIR)
+    result = session.run(*stages, stem="inverter_corners", outdir=OUTDIR)
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
     ax_vout, ax_gain = axes
 
     for i, (name, w_n, w_p, temp, color) in enumerate(CORNERS):
-        dc = result[i]
+        dc = result[name][0]
         vin = dc["vin"]
         vout = np.real(dc.voltages["out"])
         gain = np.gradient(vout, vin)

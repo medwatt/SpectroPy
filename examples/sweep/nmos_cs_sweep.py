@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from spectropy import SpectreSession, Circuit, simulations
+from spectropy import SpectreSession, Circuit, analyses
 from examples.config import BACKEND, OUTDIR, FREEPDK45_DIR
 
 VDD = 1.0
@@ -26,10 +26,10 @@ def main() -> None:
     session = SpectreSession(backend=BACKEND)
     session.load_netlist(build_netlist().get_netlist())
 
-    inner_dc = simulations.DC(param="vgate", start=0, stop=VDD, step=0.01)
+    inner_dc = analyses.DC(param="vgate", start=0, stop=VDD, step=0.01)
 
     result = session.run(
-        simulations.Sweep(
+        analyses.Sweep(
             inner=[inner_dc],
             param="temp",
             values=TEMPS,
@@ -39,11 +39,14 @@ def main() -> None:
         outdir=OUTDIR,
     )
 
+    # A Sweep produces one GroupResult, one entry per swept value.
+    sweep = result["tempswp"]
+
     fig, ax = plt.subplots(figsize=(8, 5))
     for i, temp in enumerate(TEMPS):
-        if i >= len(result):
+        if i >= len(sweep):
             break
-        dc = result[i]
+        dc = sweep[i]
         ax.plot(dc.sweep, dc["out"], linewidth=2, label=f"T = {temp} C")
 
     ax.set_xlabel("$V_{GS}$ (V)")

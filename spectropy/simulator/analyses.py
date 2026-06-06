@@ -1,9 +1,9 @@
 # imports <<<
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
-
-from .base import Runnable, Simulation
+from .base import Runnable, Analysis, Scope
+from .scopes import Stage, Sweep, MonteCarlo, Corner, Corners
+from .statements import Alter, AlterGroup, Vary, Correlate, Statistics
 from .results import (
     OpResult,
     DcResult,
@@ -16,8 +16,14 @@ from .results import (
 )
 # >>>
 
+# This module doubles as the public ``analyses`` namespace: it defines the leaf
+# analyses (OP, DC, …) and re-exports the scopes (Stage, Sweep, MonteCarlo,
+# Corners) and the configuration objects (Alter, Statistics, …) that they
+# consume, so user code can reach everything through ``analyses.<Name>``.
+
+
 # op analysis <<<
-class OP(Simulation):
+class OP(Analysis):
     """
     Operating-point analysis.
     """
@@ -37,10 +43,13 @@ class OP(Simulation):
 
     def make_result(self, meta, sweep_name, sweep, signals) -> OpResult:
         return OpResult(meta=meta, signals=signals)
+
+
 # >>>
 
+
 # dc analysis <<<
-class DC(Simulation):
+class DC(Analysis):
     """DC sweep analysis.
 
     Use ``param`` to sweep a circuit, instance, model, or subcircuit
@@ -85,12 +94,14 @@ class DC(Simulation):
             sweep=self._sweep_array(sweep),
             signals=signals,
         )
+
+
 # >>>
 
+
 # ac analysis <<<
-class AC(Simulation):
-    """Small-signal AC analysis.
-    """
+class AC(Analysis):
+    """Small-signal AC analysis."""
 
     def __init__(
         self,
@@ -131,10 +142,13 @@ class AC(Simulation):
             sweep=self._sweep_array(sweep),
             signals=signals,
         )
+
+
 # >>>
 
+
 # transient analysis <<<
-class Tran(Simulation):
+class Tran(Analysis):
     """Transient analysis.
 
     ``stop`` and ``step`` are required. Common options include ``start``,
@@ -182,10 +196,13 @@ class Tran(Simulation):
             sweep=self._sweep_array(sweep),
             signals=signals,
         )
+
+
 # >>>
 
+
 # transfer-function analysis <<<
-class XF(Simulation):
+class XF(Analysis):
     """Small-signal transfer-function analysis.
 
     This sweeps frequency around the DC operating point. Use
@@ -248,10 +265,13 @@ class XF(Simulation):
             sweep=self._sweep_array(sweep),
             signals=signals,
         )
+
+
 # >>>
 
+
 # noise analysis <<<
-class Noise(Simulation):
+class Noise(Analysis):
     """Small-signal noise analysis.
 
     Specify the output with ``output_pos``/``output_neg`` or use ``oprobe``
@@ -311,10 +331,13 @@ class Noise(Simulation):
             sweep=self._sweep_array(sweep),
             signals=signals,
         )
+
+
 # >>>
 
+
 # stability analysis <<<
-class STB(Simulation):
+class STB(Analysis):
     """Small-signal stability analysis using Middlebrook's method.
 
     ``probe`` identifies the loop-breaking probe.
@@ -366,11 +389,13 @@ class STB(Simulation):
             sweep=self._sweep_array(sweep),
             signals=signals,
         )
+
+
 # >>>
 
-# pz analysis <<<
 
-class PZ(Simulation):
+# pz analysis <<<
+class PZ(Analysis):
     """Pole-zero analysis.
 
     Use ``output_pos``/``output_neg`` for node-based PZ, or ``iprobe`` and
@@ -417,256 +442,35 @@ class PZ(Simulation):
 
     def make_result(self, meta, sweep_name, sweep, signals) -> PzResult:
         return PzResult(meta=meta, signals=signals)
+
+
 # >>>
 
-# sweep analysis <<<
-class Sweep(Runnable):
-    """Parametric sweep wrapper.
 
-    Wraps one or more inner analyses and sweeps a parameter such as a circuit
-    temperature or a top-level netlist parameter. Specify the sweep range via
-    ``values`` (explicit list) or ``start`` + ``stop``.
-    """
-
-    def __init__(
-        self,
-        inner: Sequence[Simulation],
-        param: str,
-        name: str = "swp",
-        values: Sequence[object] | None = None,
-        start: object | None = None,
-        stop: object | None = None,
-        step: object | None = None,
-        sweep_type: str = "lin",
-        points: object | None = None,
-        **params: object,
-    ) -> None:
-        if not inner:
-            raise ValueError("Sweep requires at least one inner analysis")
-        self.inner = tuple(inner)
-        self.param = param
-        self.name = name
-        self.values = tuple(values) if values is not None else None
-        self.start = start
-        self.stop = stop
-        self.step = step
-        self.sweep_type = sweep_type
-        self.points = points
-        self.params = params
-        if self.values is None and (self.start is None or self.stop is None):
-            raise ValueError("Sweep requires either 'values' or 'start'+'stop'")
-        if self.sweep_type not in {"lin", "dec", "log"}:
-            raise ValueError("sweep_type must be one of: lin, dec, log")
-
-    def build_command(self) -> str:
-        header = f"{self.name} sweep param={self.param}"
-        if self.values is not None:
-            vals = " ".join(str(v) for v in self.values)
-            header += f" values=[{vals}]"
-        else:
-            header += f" start={self.start} stop={self.stop}"
-            if self.points is not None:
-                header += f" {self.sweep_type}={self.points}"
-            elif self.step is not None:
-                header += f" step={self.step}"
-        if self.params:
-            header += " " + " ".join(f"{k}={v}" for k, v in self.params.items())
-        inner_lines = "\n    ".join(s.build_command() for s in self.inner)
-        return f"{header} {{\n    {inner_lines}\n}}"
-# >>>
-
-# montecarlo analysis <<<
-class MonteCarlo(Runnable):
-    """Monte Carlo analysis wrapping one or more inner analyses.
-
-    A ``statistics`` block must appear earlier in the netlist to define
-    the random-variable distributions. ``variations`` controls which
-    distributions are sampled: ``all``, ``process``, or ``mismatch``.
-    ``seed`` pins the random number generator for reproducibility.
-    """
-
-    _VALID_VARIATIONS = frozenset({"all", "process", "mismatch"})
-
-    def __init__(
-        self,
-        inner: Sequence[Simulation],
-        name: str = "mc",
-        numruns: int = 100,
-        variations: str = "all",
-        seed: int | None = None,
-        savefamilyplots: bool = True,
-        **params: object,
-    ) -> None:
-        if variations not in self._VALID_VARIATIONS:
-            raise ValueError(
-                f"variations must be one of: {', '.join(sorted(self._VALID_VARIATIONS))}"
-            )
-        if not inner:
-            raise ValueError("MonteCarlo requires at least one inner analysis")
-        self.inner = tuple(inner)
-        self.name = name
-        self.numruns = numruns
-        self.variations = variations
-        self.seed = seed
-        self.savefamilyplots = savefamilyplots
-        self.params = params
-
-    def build_command(self) -> str:
-        parts = [
-            f"{self.name} montecarlo",
-            f"numruns={self.numruns}",
-            f"variations={self.variations}",
-        ]
-        if self.seed is not None:
-            parts.append(f"seed={self.seed}")
-        parts.append(f"savefamilyplots={'yes' if self.savefamilyplots else 'no'}")
-        parts.extend(f"{k}={v}" for k, v in self.params.items())
-        header = " ".join(parts)
-        inner_lines = "\n    ".join(s.build_command() for s in self.inner)
-        return f"{header} {{\n    {inner_lines}\n}}"
-# >>>
-
-# corner analysis <<<
-class Corner:
-    """A single entry in a corners sweep: one PVT operating point.
-
-    ``section`` is the named section to load from ``file``.
-    ``temp`` optionally overrides the simulation temperature for this corner
-    through an ``options`` statement inside the altergroup. ``parameters`` can
-    be used for voltage corners when supply sources reference top-level
-    parameters (for example ``parameters={"vdd": 0.9}``).
-
-    The label used to index into ``CornersResult`` is ``section`` when neither
-    voltage nor temperature is given, ``"<section>@<temp>"`` for temperature
-    corners, or the explicit ``label`` when provided.
-    """
-
-    def __init__(
-        self,
-        section: str,
-        file: str,
-        temp: float | None = None,
-        parameters: Mapping[str, object] | None = None,
-        options: Mapping[str, object] | None = None,
-        label: str | None = None,
-    ) -> None:
-        if not section:
-            raise ValueError("Corner requires a non-empty section")
-        if not file:
-            raise ValueError("Corner requires a non-empty file")
-        self.section = section
-        self.file = file
-        self.temp = temp
-        self.parameters = dict(parameters) if parameters else {}
-        self.options = dict(options) if options else {}
-        if temp is not None:
-            existing_temp = self.options.get("temp")
-            if existing_temp is not None and existing_temp != temp:
-                raise ValueError("Corner temp conflicts with options['temp']")
-            self.options["temp"] = temp
-        self._label = label
-
-    @property
-    def label(self) -> str:
-        if self._label is not None:
-            return self._label
-        if self.temp is not None:
-            return f"{self.section}@{int(self.temp)}"
-        return self.section
-
-    def build_lines(self, alter_name: str) -> list[str]:
-        lines: list[str] = [f'include "{self.file}" section={self.section}']
-        if self.parameters:
-            params = " ".join(f"{k}={v}" for k, v in self.parameters.items())
-            lines.append(f"parameters {params}")
-        if self.options:
-            opts = " ".join(f"{k}={v}" for k, v in self.options.items())
-            lines.append(f"{alter_name}_opts options {opts}")
-        return lines
-
-    def build_line(self) -> str:
-        """Return the include line for backward-compatible tests/debugging."""
-        return f'    include "{self.file}" section={self.section}'
-
-
-class Corners(Runnable):
-    """Corners sweep: run inner analyses once per model library section.
-
-    Spectre runs each ``Corner`` entry in sequence and writes PSF files
-    named ``<name>_NNN_<inner_stem>``.  Results
-    are returned as a ``CornersResult`` which supports both integer indexing
-    and label-based access (``result["tt"]``, ``result["ss@85"]``, etc.).
-
-    Process corners example::
-
-        Corners(
-            corners=[
-                Corner("tt", f"{PDK_DIR}/cornerMOShv_psp.scs"),
-                Corner("ss", f"{PDK_DIR}/cornerMOShv_psp.scs"),
-                Corner("ff", f"{PDK_DIR}/cornerMOShv_psp.scs"),
-                Corner("sf", f"{PDK_DIR}/cornerMOShv_psp.scs"),
-                Corner("fs", f"{PDK_DIR}/cornerMOShv_psp.scs"),
-            ],
-            inner=[DC(param="vin", start=0, stop=1.0, step=0.005)],
-        )
-
-    PVT example (process + supply voltage + temperature)::
-
-        Corners(
-            corners=[
-                Corner(
-                    "tt",
-                    model_file,
-                    temp=27,
-                    parameters={"vdd": 1.0},
-                    label="tt_1v0_27c",
-                ),
-                Corner(
-                    "ss",
-                    model_file,
-                    temp=125,
-                    parameters={"vdd": 0.9},
-                    label="ss_0v9_125c",
-                ),
-                Corner(
-                    "ff",
-                    model_file,
-                    temp=-40,
-                    parameters={"vdd": 1.1},
-                    label="ff_1v1_m40c",
-                ),
-            ],
-            inner=[DC(param="vin", start=0, stop=1.0, step=0.005)],
-        )
-    """
-
-    def __init__(
-        self,
-        corners: Sequence[Corner],
-        inner: Sequence[Simulation],
-        name: str = "pvt",
-    ) -> None:
-        if not corners:
-            raise ValueError("Corners requires at least one corner entry")
-        if not inner:
-            raise ValueError("Corners requires at least one inner analysis")
-        self.corners = list(corners)
-        self.inner = tuple(inner)
-        self.name = name
-
-    @property
-    def labels(self) -> list[str]:
-        return [c.label for c in self.corners]
-
-    def build_command(self) -> str:
-        blocks: list[str] = []
-        for i, corner in enumerate(self.corners):
-            alter_name = f"{self.name}_alter_{i:03d}"
-            alt_body = "\n    ".join(corner.build_lines(alter_name))
-            blocks.append(f"{alter_name} altergroup {{\n    {alt_body}\n}}")
-            for inner in self.inner:
-                cmd = inner.build_command()
-                prefixed_name = f"{self.name}_{i:03d}_{inner.name}"
-                blocks.append(prefixed_name + cmd[len(inner.name) :])
-        return "\n".join(blocks)
-# >>>
+__all__ = [
+    # base
+    "Runnable",
+    "Analysis",
+    "Scope",
+    # analyses
+    "OP",
+    "DC",
+    "AC",
+    "Tran",
+    "XF",
+    "Noise",
+    "STB",
+    "PZ",
+    # scopes
+    "Stage",
+    "Sweep",
+    "MonteCarlo",
+    "Corner",
+    "Corners",
+    # configuration objects
+    "Alter",
+    "AlterGroup",
+    "Vary",
+    "Correlate",
+    "Statistics",
+]

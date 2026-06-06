@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from spectropy import SpectreSession, Circuit, simulations
+from spectropy import SpectreSession, Circuit, analyses
 from examples.config import BACKEND, OUTDIR, FREEPDK45_DIR
 
 VDD = 1.0
@@ -27,8 +27,8 @@ def main() -> None:
     session.load_netlist(build_netlist().get_netlist())
 
     result = session.run(
-        simulations.OP(),
-        simulations.XF(
+        analyses.OP(),
+        analyses.XF(
             start="1",
             stop="100e9",
             sweep_type="dec",

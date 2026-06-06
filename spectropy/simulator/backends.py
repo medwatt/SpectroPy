@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 # >>>
 
+
 # abstract class <<<
 @runtime_checkable
 class Backend(Protocol):
@@ -26,7 +27,10 @@ class Backend(Protocol):
 
     def to_local(self, path: Path) -> Path: ...
     def build_argv(self, outdir: Path, netlist: Path) -> list[str]: ...
+
+
 # >>>
+
 
 # native <<<
 class NativeBackend:
@@ -46,7 +50,10 @@ class NativeBackend:
 
     def build_argv(self, outdir: Path, netlist: Path) -> list[str]:
         return [self.executable, "-f", "psfascii", "-outdir", str(outdir), str(netlist)]
+
+
 # >>>
+
 
 # docker <<<
 class DockerBackend:
@@ -89,7 +96,10 @@ class DockerBackend:
             f" {self.path_prefix}{netlist}"
         )
         return [self.wrapper, cmd]
+
+
 # >>>
+
 
 # sshfs <<<
 class SSHBackend:
@@ -168,4 +178,6 @@ class SSHBackend:
         if self.remote_shell:
             cmd = f"{self.remote_shell} -c '{cmd}'"
         return ["ssh", self.host, cmd]
+
+
 # >>>

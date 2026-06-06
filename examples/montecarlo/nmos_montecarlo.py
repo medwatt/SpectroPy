@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import norm
 
-from spectropy import SpectreSession, Circuit, simulations
+from spectropy import SpectreSession, Circuit, analyses
 from examples.config import BACKEND, OUTDIR, FREEPDK45_DIR
 
 VDD = 1.0
@@ -29,22 +29,22 @@ def main() -> None:
     session = SpectreSession(backend=BACKEND)
     session.load_netlist(build_netlist().get_netlist())
 
-    stats = simulations.Statistics(
-        process=[
-            simulations.Vary("rd_val", dist="gauss", std=5, percent=True),
-            simulations.Vary("vgs_bias", dist="gauss", std=2, percent=True),
-        ]
-    )
-
-    mc = simulations.MonteCarlo(
-        inner=[simulations.OP()],
+    mc = analyses.MonteCarlo(
+        inner=[analyses.OP()],
+        statistics=analyses.Statistics(
+            process=[
+                analyses.Vary("rd_val", dist="gauss", std=5, percent=True),
+                analyses.Vary("vgs_bias", dist="gauss", std=2, percent=True),
+            ]
+        ),
         numruns=NUMRUNS,
         variations="process",
         seed=42,
+        name="mc",
     )
 
-    result = session.run(stats, mc, stem="nmos_montecarlo", outdir=OUTDIR)
-    mc_result = result[0]
+    result = session.run(mc, stem="nmos_montecarlo", outdir=OUTDIR)
+    mc_result = result["mc"]
 
     vout_vals = np.array([np.real(run.voltages["out"]).item() for run in mc_result])
 

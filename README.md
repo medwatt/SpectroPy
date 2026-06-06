@@ -128,7 +128,7 @@ session = SpectreSession(
 | `remote_shell` | Shell to invoke on the server, e.g. `"tcsh"`; required when `env_script` uses shell-specific syntax like `setenv` (optional) |
 
 
-#### Step 4: Run simulations
+#### Step 4: Run analyses
 
 Pass an `outdir` that is a path **on the server** (the path Spectre will
 write to). SpectroPy translates it to the corresponding local path through the
@@ -136,7 +136,7 @@ mount for reading results back.
 
 ```python
 result = session.run(
-    simulations.AC(sweep_type="dec", points=20, fstart=1, fstop=1e9),
+    analyses.AC(sweep_type="dec", points=20, fstart=1, fstop=1e9),
     outdir="/home/user/spectropy_results/",
 )
 ```
@@ -149,7 +149,7 @@ the output node as a numpy array.
 ```python
 import numpy as np
 
-from spectropy import Circuit, SpectreSession, simulations
+from spectropy import Circuit, SpectreSession, analyses
 
 ckt = Circuit("RC low-pass")
 ckt.global_nodes("0")
@@ -162,7 +162,7 @@ session = SpectreSession()
 session.load_netlist(ckt.get_netlist())
 
 result = session.run(
-    simulations.AC(start="100", stop="1e6", sweep_type="dec", points=20),
+    analyses.AC(start="100", stop="1e6", sweep_type="dec", points=20),
     outdir="/tmp/spectropy_results",
 )
 

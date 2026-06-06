@@ -32,7 +32,7 @@ pyrightconfig.json
 .mypy_cache/
 .pytest_cache/
 
-# Tests
+# Local scratch
 untracked/
 examples/spectropy_results/
 examples/config_local.py

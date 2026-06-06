@@ -6,7 +6,7 @@ from spectropy import (
     Circuit,
     SubCircuit,
     WaveformGenerator,
-    simulations,
+    analyses,
 )
 
 from examples.config import BACKEND, OUTDIR, FREEPDK45_DIR, VA_DIR
@@ -78,7 +78,7 @@ def main() -> None:
         print(f"WL set={wl_set_v}V  reset={wl_reset_v}V, vte={vte_level}V")
         session.load_netlist(build_netlist(wl_set_v, wl_reset_v, vte_level).get_netlist())
         result = session.run(
-            simulations.Tran(stop=f"{stop}n", step="1n"),
+            analyses.Tran(stop=f"{stop}n", step="1n"),
             stem="memristor_mlc",
             outdir=OUTDIR,
         )

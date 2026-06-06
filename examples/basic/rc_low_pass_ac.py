@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from spectropy import SpectreSession, Circuit, simulations
+from spectropy import SpectreSession, Circuit, analyses
 from examples.config import BACKEND, OUTDIR
 
 
@@ -20,7 +20,7 @@ def main() -> None:
     session.load_netlist(build_netlist().get_netlist())
 
     result = session.run(
-        simulations.AC(start="100", stop="1e6", sweep_type="dec", points=20),
+        analyses.AC(start="100", stop="1e6", sweep_type="dec", points=20),
         stem="rc_low_pass_ac",
         outdir=OUTDIR,
     )
