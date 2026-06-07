@@ -73,6 +73,23 @@ class Circuit:
     def save(self, *signals: str) -> None:
         self.save_signals.append("save " + " ".join(signals))
 
+    def save_all(self) -> None:
+        self.save_signals.append("save *")
+
+    def save_device_currents(self) -> None:
+        self.save_signals.append("save *:1 sigtype=dev")
+
+    def save_device_oppoints(self) -> None:
+        self.save_signals.append("save *:oppoint")
+
+    def save_nested(self, depth: int) -> None:
+        if depth < 1:
+            raise ValueError("save_nested: depth must be >= 1")
+        self.save_signals.append(f"save * depth={depth}")
+
+    def save_subcircuit(self, master: str) -> None:
+        self.save_signals.append(f"save * subckt={master}")
+
     def ic(self, **conditions: object) -> None:
         self.initial_conditions.append("ic " + _join_kv(conditions))
 

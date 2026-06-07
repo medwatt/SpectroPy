@@ -27,7 +27,7 @@ def test_stage_emits_setup_then_inner_in_order():
     cmd = stage.build_command()
     assert cmd == (
         "set_temp alter param=temp value=-40\n"
-        "dc_cold dc param=vin start=0 stop=1 step=0.1"
+        "dc_cold dc param=vin start=0 stop=1 step=0.1 save=lvlpub"
     )
 
 

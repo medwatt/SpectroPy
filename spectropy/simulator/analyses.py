@@ -70,7 +70,7 @@ class DC(Analysis):
         self.stop = stop
         self.step = step
         self.name = name
-        self.params = params
+        self.params = {"save": "lvlpub", **params}
 
     @property
     def psf_stem(self) -> str:
@@ -119,7 +119,7 @@ class AC(Analysis):
         self.stop = stop
         self.sweep_type = sweep_type
         self.points = points
-        self.params = params
+        self.params = {"save": "lvlpub", **params}
 
     @property
     def psf_stem(self) -> str:
@@ -172,7 +172,7 @@ class Tran(Analysis):
         self.start = start
         self.maxstep = maxstep
         self.uic = uic
-        self.params = params
+        self.params = {"save": "lvlpub", **params}
 
     @property
     def psf_stem(self) -> str:

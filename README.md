@@ -5,6 +5,8 @@ SpectroPy is a Python library for building and simulating analog circuits using
 the simulation backend. Circuits are built programmatically through a Python
 API and results are returned as numpy arrays.
 
+Full API reference: [docs/reference.md](docs/reference.md)
+
 ## Requirements
 
 - Python 3.10+
