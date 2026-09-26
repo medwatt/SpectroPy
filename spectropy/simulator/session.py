@@ -19,9 +19,14 @@ class SpectreSession:
         self,
         *,
         backend: Backend | None = None,
+        timeout: float | None = None,
     ) -> None:
         self.backend = backend if backend is not None else NativeBackend()
         self._netlist_lines: list[str] | None = None
+        # Wall-clock cap (seconds) per spectre run. None = no limit. A run that
+        # exceeds it raises subprocess.TimeoutExpired (callers can score it as a
+        # failed eval) and the backend's spectre process is killed.
+        self.timeout = timeout
 
     def load_netlist(self, netlist: list[str]) -> None:
         self._netlist_lines = netlist
@@ -65,11 +70,24 @@ class SpectreSession:
             encoding="utf-8",
         )
 
-        completed = subprocess.run(
-            self.backend.build_argv(outdir_path, netlist_path),
-            capture_output=True,
-            text=True,
-        )
+        try:
+            completed = subprocess.run(
+                self.backend.build_argv(outdir_path, netlist_path),
+                capture_output=True,
+                text=True,
+                timeout=self.timeout,
+            )
+        except subprocess.TimeoutExpired:
+            # subprocess.run kills the immediate child (e.g. `docker exec`), but
+            # spectre inside a container/remote can outlive it -- ask the backend
+            # to reap it by netlist stem, then re-raise so the caller sees a fail.
+            kill = getattr(self.backend, "build_kill_argv", None)
+            if kill is not None:
+                try:
+                    subprocess.run(kill(f"{stem}.scs"), capture_output=True, timeout=30)
+                except Exception:  # noqa: BLE001  (best-effort reap)
+                    pass
+            raise
 
         # Spectre returns 0 on success (including runs with warnings/notices)
         # and non-zero only on fatal errors.

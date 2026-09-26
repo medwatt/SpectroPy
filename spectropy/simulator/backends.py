@@ -51,6 +51,9 @@ class NativeBackend:
     def build_argv(self, outdir: Path, netlist: Path) -> list[str]:
         return [self.executable, "-f", "psfascii", "-outdir", str(outdir), str(netlist)]
 
+    def build_kill_argv(self, stem: str) -> list[str]:
+        return ["pkill", "-9", "-f", stem]
+
 
 # >>>
 
@@ -96,6 +99,10 @@ class DockerBackend:
             f" {self.path_prefix}{netlist}"
         )
         return [self.wrapper, cmd]
+
+    def build_kill_argv(self, stem: str) -> list[str]:
+        # reap an orphaned in-container spectre by netlist stem, via the same wrapper
+        return [self.wrapper, f"pkill -9 -f {stem}"]
 
 
 # >>>
